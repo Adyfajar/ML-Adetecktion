@@ -10,7 +10,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f0f4fa; }
         .app-card { border-radius: 40px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05); }
         .btn-sage { background-color: #64968c; transition: all 0.3s ease; }
-        .progress-ring { transition: stroke-dashoffset 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .progress-ring { transition: stroke-dashoffset 0.8s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #64968c; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
@@ -28,25 +28,32 @@
             
             <div id="screen-upload" class="flex-1 flex flex-col">
                 <div class="flex items-center mb-8">
-                    <button class="text-gray-400 text-2xl">←</button>
+                    <button class="text-gray-400 text-2xl" onclick="resetApp()">←</button>
                     <h2 class="flex-1 text-center text-xl font-bold text-slate-700 mr-6">Unggah Sampel</h2>
                 </div>
 
                 <div id="camera-container" class="hidden relative w-full max-w-sm mx-auto mb-6 rounded-3xl overflow-hidden border-4 border-slate-100">
                     <video id="video" width="100%" autoplay playsinline class="bg-black"></video>
-                    <button onclick="takeSnapshot()" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white p-4 rounded-full shadow-xl">📸</button>
+                    <button onclick="takeSnapshot()" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white p-4 rounded-full shadow-xl hover:scale-110 transition-transform">📸</button>
                 </div>
 
                 <div id="upload-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto w-full">
-                    <label class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 rounded-3xl transition-all group">
+                    <label class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 rounded-3xl transition-all group">
                         <input type="file" class="hidden" id="input-file" accept="image/*">
                         <span class="text-4xl mb-3">🖼️</span>
                         <span class="font-bold text-sm text-slate-600">Pilih Gambar</span>
                     </label>
-                    <button onclick="startCamera()" class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 rounded-3xl transition-all group">
+                    <button onclick="startCamera()" class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 rounded-3xl transition-all group">
                         <span class="text-4xl mb-3">📸</span>
                         <span class="font-bold text-sm text-slate-600">Gunakan Kamera</span>
                     </button>
+                </div>
+
+                <div id="preview-box" class="hidden mx-auto mb-6 text-center">
+                    <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Preview Gambar</p>
+                    <div class="w-32 h-32 mx-auto rounded-2xl overflow-hidden border-4 border-white shadow-md">
+                        <img id="img-preview-pre" src="" class="w-full h-full object-cover">
+                    </div>
                 </div>
 
                 <button id="btn-start-analyze" onclick="analyzeImage()" class="btn-sage text-white font-bold py-4 rounded-3xl w-full max-w-lg mx-auto shadow-lg mt-auto opacity-50 cursor-not-allowed" disabled>
@@ -74,8 +81,8 @@
                         <div>
                             <h3 class="text-slate-400 font-bold text-xs uppercase tracking-wider mb-2">Hasil Putusan Akhir</h3>
                             <div class="flex items-center gap-3">
-                                <h4 id="verdict-text" class="text-4xl font-extrabold text-slate-800">Menunggu...</h4>
-                                <span id="verdict-badge" class="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">NORMAL</span>
+                                <h4 id="verdict-text" class="text-4xl font-extrabold text-slate-800 tracking-tight">Menunggu...</h4>
+                                <span id="verdict-badge" class="px-3 py-1 rounded-full text-white text-[10px] font-bold uppercase">Memuat...</span>
                             </div>
                         </div>
                         <div class="mt-8 flex items-center gap-4">
@@ -90,23 +97,23 @@
                         </div>
                     </div>
 
-                    <div class="md:col-span-5 border p-6 rounded-[32px] space-y-5">
+                    <div class="md:col-span-5 border p-6 rounded-[32px] space-y-5 bg-slate-50/50">
                         <h3 class="font-bold text-slate-700 text-sm">🔍 Akurasi Per Model</h3>
                         <div>
-                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>ResNet-50</span><span id="resnet-val">0%</span></div>
-                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="resnet-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500"><span>ResNet-50</span><span id="resnet-val">0%</span></div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div id="resnet-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
                         </div>
                         <div>
-                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>EfficientNet</span><span id="eff-val">0%</span></div>
-                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="eff-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500"><span>EfficientNet</span><span id="eff-val">0%</span></div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div id="eff-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
                         </div>
                         <div>
-                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>Vision Transf.</span><span id="vit-val">0%</span></div>
-                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="vit-bar" class="bg-amber-400 h-full transition-all duration-1000" style="width: 0%"></div></div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-500"><span>Vision Transf.</span><span id="vit-val">0%</span></div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div id="vit-bar" class="bg-amber-400 h-full transition-all duration-1000" style="width: 0%"></div></div>
                         </div>
                     </div>
                 </div>
-                <button onclick="resetApp()" class="mt-8 bg-slate-800 text-white font-bold py-4 rounded-3xl w-full shadow-lg">Analisis Gambar Lain</button>
+                <button onclick="resetApp()" class="mt-8 bg-slate-800 hover:bg-slate-900 transition-colors text-white font-bold py-4 rounded-3xl w-full shadow-lg">Analisis Gambar Lain</button>
             </div>
         </div>
     </div>
@@ -115,6 +122,8 @@
         const inputFile = document.getElementById('input-file');
         const video = document.getElementById('video');
         const miniPreview = document.getElementById('img-preview-mini');
+        const prePreview = document.getElementById('img-preview-pre');
+        const previewBox = document.getElementById('preview-box');
         let selectedBlob = null;
 
         // 1. Logika Kamera
@@ -124,7 +133,10 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
-            } catch (err) { alert("Akses kamera ditolak!"); }
+            } catch (err) { 
+                alert("Akses kamera ditolak!"); 
+                resetApp();
+            }
         }
 
         function takeSnapshot() {
@@ -135,7 +147,10 @@
             
             canvas.toBlob(blob => {
                 selectedBlob = blob;
-                miniPreview.src = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
+                miniPreview.src = url;
+                prePreview.src = url;
+                previewBox.classList.remove('hidden');
                 enableAnalyze();
             }, 'image/jpeg');
 
@@ -147,9 +162,13 @@
         inputFile.addEventListener('change', (e) => {
             if (e.target.files[0]) {
                 selectedBlob = e.target.files[0];
-                miniPreview.src = URL.createObjectURL(selectedBlob);
+                const url = URL.createObjectURL(selectedBlob);
+                miniPreview.src = url;
+                prePreview.src = url;
+                previewBox.classList.remove('hidden');
                 enableAnalyze();
             }
+            
         });
 
         function enableAnalyze() {
@@ -167,18 +186,26 @@
             formData.append('file', selectedBlob);
 
             try {
-                const response = await fetch('http://localhost:5000/predict', { method: 'POST', body: formData });
+                // Menghubungi Flask Backend (Port 5000)
+                const response = await fetch('http://127.0.0.1:5000/predict', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                
                 const data = await response.json();
 
-                if (data.status === "invalid") {
-                    alert("⚠️ ERROR: Gambar bukan telapak tangan! Harap ambil foto telapak tangan yang jelas.");
+                if (data.status === "error") {
+                    alert("⚠️ ERROR: " + data.message);
                     resetApp();
                     return;
                 }
 
-                updateUI(data);
+                // Memberi sedikit delay agar user bisa melihat proses loading
+                setTimeout(() => updateUI(data), 800);
+
             } catch (err) {
-                alert("Gagal terhubung ke server Python. Pastikan Flask berjalan.");
+                console.error(err);
+                alert("Gagal terhubung ke server Python. Pastikan file app.py sudah dijalankan (python app.py).");
                 resetApp();
             }
         }
@@ -187,27 +214,39 @@
             document.getElementById('screen-loading').classList.add('hidden');
             document.getElementById('screen-result').classList.remove('hidden');
 
+            // Set Teks Hasil
             document.getElementById('verdict-text').textContent = data.prediction;
             document.getElementById('confidence-percent').textContent = data.confidence + "%";
             
-            // Progress Ring
+            // Atur Warna Badge
+            const badge = document.getElementById('verdict-badge');
+            if (data.prediction === "Anemia") {
+                badge.textContent = "TERDETEKSI";
+                badge.className = "px-3 py-1 rounded-full bg-red-500 text-white text-[10px] font-bold uppercase";
+            } else {
+                badge.textContent = "NORMAL";
+                badge.className = "px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold uppercase";
+            }
+
+            // Animasi Progress Ring (Lingkaran)
             const circle = document.getElementById('circle-confidence');
-            const offset = 201 - (201 * data.confidence) / 100;
+            const circumference = 2 * Math.PI * 32; // 201
+            const offset = circumference - (circumference * data.confidence) / 100;
             circle.style.strokeDashoffset = offset;
 
-            // Bar Akurasi Model (Data dari Python)
-            document.getElementById('resnet-val').textContent = data.details.resnet + "%";
-            document.getElementById('resnet-bar').style.width = data.details.resnet + "%";
-            
-            document.getElementById('eff-val').textContent = data.details.efficientnet + "%";
-            document.getElementById('eff-bar').style.width = data.details.efficientnet + "%";
+            // Update Bar Akurasi Per Model (Mengambil dari objek data.details di app.py)
+            updateModelBar('resnet', data.details.resnet);
+            updateModelBar('eff', data.details.efficientnet);
+            updateModelBar('vit', data.details.vit);
+        }
 
-            document.getElementById('vit-val').textContent = data.details.vit + "%";
-            document.getElementById('vit-bar').style.width = data.details.vit + "%";
+        function updateModelBar(prefix, value) {
+            document.getElementById(`${prefix}-val`).textContent = value + "%";
+            document.getElementById(`${prefix}-bar`).style.width = value + "%";
         }
 
         function resetApp() {
-            location.reload();
+            window.location.reload();
         }
     </script>
 </body>
